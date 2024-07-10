@@ -9,17 +9,32 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+/**
+ * Сервизен клас за управление на продуктите в магазина.
+ * Имплементира интерфейса {@link ProductsService}.
+ */
 @Service
 public class ProductsServiceImpl implements ProductsService {
     private final ProductsRepositoryImpl productRepository;
     private final DealsRepositoryImpl dealsRepository;
 
+    /**
+     * Конструктор за инжектиране на зависимости.
+     *
+     * @param productRepository Репозитори за продукти
+     * @param dealsRepository   Репозитори за сделки
+     */
     @Autowired
     public ProductsServiceImpl(ProductsRepositoryImpl productRepository, DealsRepositoryImpl dealsRepository) {
         this.productRepository = productRepository;
         this.dealsRepository = dealsRepository;
     }
 
+    /**
+     * Добавя списък от продукти в магазина.
+     *
+     * @param productsList Списък с продукти за добавяне
+     */
     @Override
     public void addProducts(List<Products> productsList) {
         for (Products product : productsList) {
@@ -27,12 +42,22 @@ public class ProductsServiceImpl implements ProductsService {
         }
     }
 
+    /**
+     * Връща всички продукти в магазина като мап от име на продукт към цена.
+     *
+     * @return Мап с всички продукти и техните цени
+     */
     @Override
     public Map<String, Double> getAllProducts() {
         return productRepository.getAllProducts();
     }
 
-
+    /**
+     * Пресмята общата цена на продуктите в кошницата според различни оферти и налични сделки.
+     *
+     * @param basket Списък с имена на продукти в кошницата
+     * @return Общата цена на продуктите в кошницата, форматирана като низ
+     */
     @Override
     public String calculateTotalCost(List<String> basket) {
         Map<String, Double> products = productRepository.getAllProducts();
@@ -43,14 +68,18 @@ public class ProductsServiceImpl implements ProductsService {
         totalCost = calculateTwoForThree(basket, products, totalCost, itemCount);
         totalCost = calculateOneForHalf(products, totalCost, itemCount);
 
-
-        for (Map.Entry<String, Integer> entry : itemCount.entrySet()) {
-            totalCost += entry.getValue() * products.get(entry.getKey());
-        }
-
-        return String.format("%d aws and %d clouds", (int)(totalCost / 100), (int)totalCost % 100);
+        // Преобразуване на общата цена в низ с формат "X aws and Y clouds"
+        return String.format("%d aws and %d clouds", (int) (totalCost / 100), (int) totalCost % 100);
     }
 
+    /**
+     * Пресмята цената според сделката "Купи едно, получи едно на половин цена" за всички продукти в кошницата.
+     *
+     * @param products  Мап с продуктите и техните цени
+     * @param totalCost Общата цена преди прилагане на сделките
+     * @param itemCount Мап с броя продукти по име
+     * @return Обновена обща цена след прилагане на сделката "Купи едно, получи едно на половин цена"
+     */
     @Override
     public double calculateOneForHalf(Map<String, Double> products, double totalCost, Map<String, Integer> itemCount) {
         for (String dealItem : dealsRepository.getBuyOneGetOneHalfPriceNames()) {
@@ -71,6 +100,15 @@ public class ProductsServiceImpl implements ProductsService {
         return totalCost;
     }
 
+    /**
+     * Пресмята цената според сделката "Две за три" за продуктите в кошницата.
+     *
+     * @param basket    Списък с имена на продукти в кошницата
+     * @param products  Мап с продуктите и техните цени
+     * @param totalCost Общата цена преди прилагане на сделките
+     * @param itemCount Мап с броя продукти по име
+     * @return Обновена обща цена след прилагане на сделката "Две за три"
+     */
     @Override
     public double calculateTwoForThree(List<String> basket, Map<String, Double> products, double totalCost, Map<String, Integer> itemCount) {
         List<String> twoForThreeBasket = new ArrayList<>();
@@ -93,6 +131,12 @@ public class ProductsServiceImpl implements ProductsService {
         return totalCost;
     }
 
+    /**
+     * Пресмята броя на всеки продукт в кошницата.
+     *
+     * @param basket Списък с имена на продукти в кошницата
+     * @return Мап с броя на всеки продукт по име
+     */
     @Override
     public Map<String, Integer> getItemCount(List<String> basket) {
         Map<String, Integer> itemCount = new HashMap<>();
